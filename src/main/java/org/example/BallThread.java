@@ -14,10 +14,10 @@ public class BallThread extends Thread {
   @SneakyThrows
   public void run() {
 
-    for (int i = 0; i < 10_000; i++) {
+    while (ball.isAlive()) {
       ball.move();
-      log.info("Thread name = {}", Thread.currentThread().getName());
-      Thread.sleep(1);
+//      log.info("Thread name = {}", Thread.currentThread().getName());
+      Thread.sleep(5);
     }
   }
 }

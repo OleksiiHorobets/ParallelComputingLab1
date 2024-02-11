@@ -4,12 +4,13 @@ import jakarta.annotation.PostConstruct;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.stream.IntStream;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -18,8 +19,8 @@ import org.springframework.stereotype.Component;
 public class BounceFrame extends JFrame {
 
   private final BallCanvas canvas;
-  public static final int WIDTH = 450;
-  public static final int HEIGHT = 350;
+  public static final int WIDTH = 800;
+  public static final int HEIGHT = 400;
 
   public BounceFrame(BallCanvas ballCanvas) {
     log.info("In Frame Thread name = {}", Thread.currentThread().getName());
@@ -41,36 +42,46 @@ public class BounceFrame extends JFrame {
     JPanel buttonPanel = new JPanel();
     buttonPanel.setBackground(Color.lightGray);
 
-    createStartButton(buttonPanel);
-    createStopButton(buttonPanel);
+    createButton("Start Blue", addNewBallToCanvas(Color.BLUE, Thread.MIN_PRIORITY), buttonPanel);
+    createButton("Start Red", addNewBallToCanvas(Color.RED, Thread.MAX_PRIORITY), buttonPanel);
+    createButton("Priority Test", priorityTest(), buttonPanel);
+    createButton("Join Test", joinTest(), buttonPanel);
+    createButton("Stop", e -> System.exit(0), buttonPanel);
 
     return buttonPanel;
   }
 
-
-  private void createStopButton(JPanel buttonPanel) {
-    JButton buttonStop = createButton("Stop", e -> System.exit(0));
-    buttonPanel.add(buttonStop);
-  }
-
-  private void createStartButton(JPanel buttonPanel) {
-    var buttonStart = createButton("Start", this::addNewBallToCanvas);
-    buttonPanel.add(buttonStart);
+  private ActionListener joinTest() {
+    return e -> new Thread(this::runTestJoin).start();
   }
 
 
-  private JButton createButton(String buttonText, ActionListener actionListener) {
+  private ActionListener priorityTest() {
+    return event -> {
+      createNewBall(Color.RED, Thread.MAX_PRIORITY);
+      IntStream.rangeClosed(0, 500)
+          .forEach(x -> createNewBall(Color.BLUE, Thread.MIN_PRIORITY));
+    };
+  }
+
+
+  private void createButton(String buttonText, ActionListener actionListener, JPanel buttonPanel) {
     JButton startButton = new JButton(buttonText);
     startButton.addActionListener(actionListener);
-    return startButton;
+    buttonPanel.add(startButton);
   }
 
 
-  private void addNewBallToCanvas(ActionEvent event) {
-    Ball b = new Ball(canvas);
+  private ActionListener addNewBallToCanvas(Color color, int threadPriority) {
+    return e -> createNewBall(color, threadPriority);
+  }
+
+  private void createNewBall(Color color, int threadPriority) {
+    Ball b = new Ball(canvas, color);
     canvas.add(b);
 
     BallThread thread = new BallThread(b);
+    thread.setPriority(threadPriority);
     thread.start();
     log.info("New thread started = {}", thread.getName());
   }
@@ -80,7 +91,22 @@ public class BounceFrame extends JFrame {
   public void initBounceFrame() {
     this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     this.setVisible(true);
-    log.info("Thread name = " + Thread.currentThread().getName());
+//    log.info("Thread name = " + Thread.currentThread().getName());
   }
 
+  @SneakyThrows
+  private void runTestJoin() {
+    var blueBall = new Ball(canvas, Color.BLUE);
+    var redBall = new Ball(canvas, Color.RED);
+
+    canvas.add(blueBall);
+    canvas.add(redBall);
+
+    Thread blueBallThread = new BallThread(blueBall);
+    Thread redBallThread = new BallThread(redBall);
+
+    blueBallThread.start();
+    blueBallThread.join();
+    redBallThread.start();
+  }
 }
