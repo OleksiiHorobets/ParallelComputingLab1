@@ -91,7 +91,6 @@ public class BounceFrame extends JFrame {
   public void initBounceFrame() {
     this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     this.setVisible(true);
-//    log.info("Thread name = " + Thread.currentThread().getName());
   }
 
   @SneakyThrows

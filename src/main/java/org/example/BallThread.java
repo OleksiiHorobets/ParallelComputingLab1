@@ -16,7 +16,6 @@ public class BallThread extends Thread {
 
     while (ball.isAlive()) {
       ball.move();
-//      log.info("Thread name = {}", Thread.currentThread().getName());
       Thread.sleep(5);
     }
   }
